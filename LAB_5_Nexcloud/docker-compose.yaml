@@ -1,0 +1,52 @@
+
+version: '3.8'
+
+services:
+  # ── PostgreSQL ──
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud_password_123
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    networks:
+      - nc-net
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - ./redis:/data
+    networks:
+      - nc-net
+
+  # ── Nextcloud ──
+  nextcloud:
+    image: nextcloud:latest
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: nextcloud_password_123
+      REDIS_HOST: redis
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: admin_password_123
+    volumes:
+      - ./nextcloud:/var/www/html
+    depends_on:
+      - db
+      - redis
+    networks:
+      - nc-net
+
+networks:
+  nc-net:
+    driver: bridge
